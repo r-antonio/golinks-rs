@@ -1,0 +1,6 @@
+-- Add migration script here
+CREATE TABLE IF NOT EXISTS golinks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR NOT NULL UNIQUE,
+    url VARCHAR NOT NULL
+);
