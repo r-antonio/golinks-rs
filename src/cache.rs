@@ -52,10 +52,15 @@ impl Cache {
         let items = self.get_values();
         let results = self.fuse.search_text_in_fuse_list(&id.0, &items);
         match results.len() {
-            1 => results
-                .first()
-                .map(move |r| items.get(r.index).unwrap().clone()),
-            _ => None,
+            1 => {
+                let value = items.get(results.get(0).unwrap().index).unwrap().clone();
+                info!("Matched {} for input: {}", *value.name, **id);
+                Some(value)
+            },
+            num_matched_values => {
+                info!("Matched {} values for input: {}", num_matched_values, **id);
+                None
+            },
         }
     }
 }
@@ -65,12 +70,22 @@ async fn load_initial_data(rocket: Rocket<Build>) -> fairing::Result {
     let pool = &**db;
     match db::get_all_links(pool).await {
         Ok(links) => {
-            if let Ok(_) = rocket.state::<Cache>().unwrap().set_values(links) {
-                return Ok(rocket);
+            match rocket.state::<Cache>().unwrap().set_values(links) {
+                Ok(_) => {
+                    info!("Cache loaded successfully");
+                    Ok(rocket)
+                },
+                Err(message) => {
+                    warn!("Couldn't load cache data {}", message);
+                    Err(rocket)
+                }
             }
-            Err(rocket)
+            
         }
-        Err(_) => Err(rocket),
+        Err(message) => {
+            error!("{}", message);
+            Err(rocket)
+        },
     }
 }
 

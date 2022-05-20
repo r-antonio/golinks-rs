@@ -21,3 +21,6 @@ features = ["sqlx_sqlite"]
 [dependencies]
 rand = "0.8"
 fuse-rust = "0.3.0"
+log = "0.4"
+fern = "0.6"
+chrono = "0.4"

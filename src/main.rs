@@ -3,6 +3,7 @@ extern crate rocket;
 mod cache;
 mod db;
 mod golink;
+mod log;
 
 use cache::Cache;
 use db::Links;
@@ -22,12 +23,15 @@ fn index(cache: &State<Cache>) -> Json<Vec<GoLink>> {
 #[get("/<id>")]
 async fn go(id: Id, cache: &State<Cache>, conn: Connection<Links>) -> Option<Redirect> {
     match cache.get_link(&id) {
-        Some(value) => Some(value),
+        Some(value) => {
+            info!("Hit cache for {}", *id);
+            Some(value)
+        },
         None => match db::get_link_url(&id, conn).await {
             Some(value) => {
-                println!("Miss cache / Hit Db");
+                info!("Cache miss for {}, found it in database", *id);
                 if let Err(message) = cache.put_link(value.clone()) {
-                    eprintln!("Could't save link into the cache: {}", message)
+                    warn!("Could't save link into the cache: {}", message)
                 };
                 Some(value)
             }
@@ -39,11 +43,19 @@ async fn go(id: Id, cache: &State<Cache>, conn: Connection<Links>) -> Option<Red
 
 #[post("/", data = "<link>")]
 async fn post_link(conn: Connection<Links>, link: Json<GoLink>) -> Result<(), &'static str> {
-    db::post_link(link.0, conn).await
+    match db::post_link(link.0, conn).await {
+        Ok(result) => Ok(result),
+        Err(message) => {
+            error!("{}", message);
+            Err(message)
+        }
+    }
 }
 
 #[launch]
 fn rocket() -> _ {
+    log::setup_logger().expect("Unable to initialize logger!");
+
     let state: Cache = Cache::new();
     rocket::build()
         .attach(db::stage())

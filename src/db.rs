@@ -58,11 +58,14 @@ async fn run_migrations(rocket: Rocket<Build>) -> fairing::Result {
         Some(db) => match sqlx::migrate!("db/migrations").run(&**db).await {
             Ok(_) => Ok(rocket),
             Err(e) => {
-                error!("Failed to initialize SQLite database: {}", e);
+                error!("Failed to run migrations: {}", e);
                 Err(rocket)
             }
         },
-        None => Err(rocket),
+        None => {
+            error!("Failed to fetch database");
+            Err(rocket)
+        },
     }
 }
 
