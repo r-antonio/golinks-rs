@@ -3,6 +3,7 @@ use rocket::fairing::{self, AdHoc};
 use rocket::{Build, Rocket};
 use rocket_db_pools::{sqlx, Connection, Database};
 use sqlx::pool::Pool;
+use tracing::{error, info, warn};
 
 #[derive(Database)]
 #[database("golinks")]
@@ -27,6 +28,7 @@ pub async fn get_all_links(pool: &Pool<sqlx::Sqlite>) -> Result<Vec<GoLink>, &'s
     }
 }
 
+#[tracing::instrument(name = "db::get_link", skip(conn))]
 pub async fn get_link_url(id: &Id, mut conn: Connection<Links>) -> Option<GoLink> {
     sqlx::query!("SELECT name, url FROM golinks WHERE name = ?", id.0)
         .fetch_one(&mut *conn)
@@ -38,6 +40,7 @@ pub async fn get_link_url(id: &Id, mut conn: Connection<Links>) -> Option<GoLink
         .ok()
 }
 
+#[tracing::instrument(name = "db::post_link", skip(conn))]
 pub async fn post_link(
     link: GoLink,
     mut conn: Connection<Links>,
@@ -65,7 +68,7 @@ async fn run_migrations(rocket: Rocket<Build>) -> fairing::Result {
         None => {
             error!("Failed to fetch database");
             Err(rocket)
-        },
+        }
     }
 }
 

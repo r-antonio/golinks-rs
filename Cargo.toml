@@ -18,9 +18,24 @@ features = ["macros", "offline", "migrate"]
 version = "0.1.0-rc.2"
 features = ["sqlx_sqlite"]
 
+[dependencies.opentelemetry]
+version = "0.17.0"
+features = ["rt-tokio"]
+
+[dependencies.opentelemetry-jaeger]
+version = "0.16.0"
+features = ["isahc_collector_client", "rt-tokio"]
+
+[dependencies.tracing-opentelemetry]
+version = "0.17.2"
+
+[dependencies.tracing-subscriber]
+version = "0.3.11"
+features = ["env-filter", "json"]
+
 [dependencies]
 rand = "0.8"
 fuse-rust = "0.3.0"
-log = "0.4"
-fern = "0.6"
 chrono = "0.4"
+tracing = "0.1.34"
+tracing-tree = "0.2.0"

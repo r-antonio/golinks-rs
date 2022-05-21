@@ -6,10 +6,17 @@ use rocket::{Build, Rocket};
 use rocket_db_pools::Database;
 use std::collections::HashMap;
 use std::sync::RwLock;
+use tracing::{error, info, warn};
 
 pub struct Cache {
     data: RwLock<HashMap<Id, GoLink>>,
     fuse: Fuse,
+}
+
+impl std::fmt::Debug for Cache {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.data.fmt(f)
+    }
 }
 
 impl Cache {
@@ -30,10 +37,12 @@ impl Cache {
         Ok(())
     }
 
+    #[tracing::instrument(name = "cache::get_link", skip(self))]
     pub fn get_link(&self, id: &Id) -> Option<GoLink> {
         self.data.read().unwrap().get(id).map(Clone::clone)
     }
 
+    #[tracing::instrument(name = "cache::put_link", skip(self))]
     pub fn put_link(&self, link: GoLink) -> Result<(), &'static str> {
         match self.data.write() {
             Ok(mut lock) => {
@@ -44,10 +53,12 @@ impl Cache {
         }
     }
 
+    #[tracing::instrument(name = "cache::get_values", skip(self))]
     pub fn get_values(&self) -> Vec<GoLink> {
         self.data.read().unwrap().values().cloned().collect()
     }
 
+    #[tracing::instrument(name = "cache::get_suggested_links", skip(self))]
     pub fn get_fuzzy(&self, id: &Id) -> Option<GoLink> {
         let items = self.get_values();
         let results = self.fuse.search_text_in_fuse_list(&id.0, &items);
@@ -56,11 +67,11 @@ impl Cache {
                 let value = items.get(results.get(0).unwrap().index).unwrap().clone();
                 info!("Matched {} for input: {}", *value.name, **id);
                 Some(value)
-            },
+            }
             num_matched_values => {
                 info!("Matched {} values for input: {}", num_matched_values, **id);
                 None
-            },
+            }
         }
     }
 }
@@ -69,23 +80,20 @@ async fn load_initial_data(rocket: Rocket<Build>) -> fairing::Result {
     let db = Links::fetch(&rocket).unwrap();
     let pool = &**db;
     match db::get_all_links(pool).await {
-        Ok(links) => {
-            match rocket.state::<Cache>().unwrap().set_values(links) {
-                Ok(_) => {
-                    info!("Cache loaded successfully");
-                    Ok(rocket)
-                },
-                Err(message) => {
-                    warn!("Couldn't load cache data {}", message);
-                    Err(rocket)
-                }
+        Ok(links) => match rocket.state::<Cache>().unwrap().set_values(links) {
+            Ok(_) => {
+                info!("Cache loaded successfully");
+                Ok(rocket)
             }
-            
-        }
+            Err(message) => {
+                warn!("Couldn't load cache data {}", message);
+                Err(rocket)
+            }
+        },
         Err(message) => {
             error!("{}", message);
             Err(rocket)
-        },
+        }
     }
 }
 
