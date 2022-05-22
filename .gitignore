@@ -1,4 +1,3 @@
 /target
 /db/*
 !/db/migrations/*
-sqlx-data.json

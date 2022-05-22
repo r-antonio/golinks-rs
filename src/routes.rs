@@ -56,6 +56,14 @@ async fn post_link(conn: Connection<Links>, link: GoLink) -> Result<(), &'static
     })
 }
 
+#[tracing::instrument(name = "DELETE /<id>", skip(cache, conn))]
+#[delete("/<id>")]
+async fn delete_link(id: Id, cache: &State<Cache>, conn: Connection<Links>) -> Result<(), &'static str> {
+    cache.delete_link(&id)?;
+    db::delete_link(&id, conn).await?;
+    Ok(())
+}
+
 pub fn all() -> Vec<rocket::Route> {
-    routes![index, get_link, post_link]
+    routes![index, get_link, post_link, delete_link]
 }

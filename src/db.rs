@@ -44,16 +44,33 @@ pub async fn get_link_url(id: &Id, mut conn: Connection<Links>) -> Option<GoLink
 pub async fn post_link(
     link: GoLink,
     mut conn: Connection<Links>,
-) -> std::result::Result<(), &'static str> {
-    sqlx::query!(
+) -> Result<(), &'static str> {
+    match sqlx::query!(
         "INSERT INTO golinks (name, url) VALUES (?, ?)",
         link.name.0,
         link.url
     )
     .execute(&mut *conn)
-    .await
-    .unwrap();
-    Ok(())
+    .await {
+        Err(message) => {
+            error!("Failed to insert link : {}", message);
+            Err("Couldn't insert link in database")
+        },
+        _ => Ok(())
+    }
+}
+
+#[tracing::instrument(name = "db::delete_link", skip(conn))]
+pub async fn delete_link(id: &Id, mut conn: Connection<Links>) -> Result<(), &'static str> {
+    match sqlx::query!("DELETE FROM golinks WHERE name = ?", id.0)
+    .execute(&mut *conn)
+    .await {
+        Err(message) => {
+            error!("Failed to delete link : {}", message);
+            Err("Couldn't delete link from database")
+        },
+        _ => Ok(())
+    }
 }
 
 async fn run_migrations(rocket: Rocket<Build>) -> fairing::Result {

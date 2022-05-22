@@ -53,6 +53,17 @@ impl Cache {
         }
     }
 
+    #[tracing::instrument(name = "cache::delete_link", skip(self))]
+    pub fn delete_link(&self, id: &Id) -> Result<(), &'static str> {
+        if let Ok(mut lock) = self.data.write() {
+            match lock.remove(id) {
+                Some(_) => return Ok(()),
+                _ => {}
+            }
+        }
+        Err("Could't delete entry from cache")
+    }
+
     #[tracing::instrument(name = "cache::get_values", skip(self))]
     pub fn get_values(&self) -> Vec<GoLink> {
         self.data.read().unwrap().values().cloned().collect()
