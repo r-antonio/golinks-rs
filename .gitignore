@@ -1,1 +1,3 @@
 /target
+/db/*
+sqlx-data.json
