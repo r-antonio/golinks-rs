@@ -3,7 +3,7 @@ use rocket::fairing::{self, AdHoc};
 use rocket::{Build, Rocket};
 use rocket_db_pools::{sqlx, Connection, Database};
 use sqlx::pool::Pool;
-use tracing::{error, info, warn};
+use tracing::error;
 
 #[derive(Database)]
 #[database("golinks")]
