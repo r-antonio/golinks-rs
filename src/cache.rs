@@ -5,11 +5,11 @@ use rocket::fairing::{self, AdHoc};
 use rocket::{Build, Rocket};
 use rocket_db_pools::Database;
 use std::collections::HashMap;
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 use tracing::{error, info, warn};
 
 pub struct Cache {
-    data: RwLock<HashMap<Id, GoLink>>,
+    data: Arc<RwLock<HashMap<Id, GoLink>>>,
     fuse: Fuse,
 }
 
@@ -22,7 +22,7 @@ impl std::fmt::Debug for Cache {
 impl Cache {
     pub fn new() -> Cache {
         Cache {
-            data: RwLock::new(HashMap::new()),
+            data: Arc::new(RwLock::new(HashMap::new())),
             fuse: Fuse::default(),
         }
     }

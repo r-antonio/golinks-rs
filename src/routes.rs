@@ -8,7 +8,7 @@ use rocket::serde::json::Json;
 use rocket::State;
 use rocket_db_pools::Connection;
 
-use tracing::{error, info, warn};
+use tracing::{error, warn};
 
 #[tracing::instrument(name = "GET /", skip(cache))]
 #[get("/")]
@@ -48,9 +48,9 @@ async fn get_link(id: Id, cache: &State<Cache>, conn: Connection<Links>) -> Opti
 }
 
 #[tracing::instrument(name = "POST /", skip(conn))]
-#[post("/", data = "<link>")]
-async fn post_link(conn: Connection<Links>, link: Json<GoLink>) -> Result<(), &'static str> {
-    db::post_link(link.0, conn).await.or_else(|message| {
+#[post("/", format = "json", data = "<link>")]
+async fn post_link(conn: Connection<Links>, link: GoLink) -> Result<(), &'static str> {
+    db::post_link(link, conn).await.or_else(|message| {
         error!("{}", message);
         Err(message)
     })
