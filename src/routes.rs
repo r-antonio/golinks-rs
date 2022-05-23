@@ -44,7 +44,7 @@ async fn get_golink_by_id(
 async fn get_link(id: Id, cache: &State<Cache>, conn: Connection<Links>) -> Option<Redirect> {
     get_golink_by_id(&id, cache, conn)
         .await
-        .map(|link| Redirect::to(link.url))
+        .map(|link| Redirect::to(link.url().clone()))
 }
 
 #[tracing::instrument(name = "POST /", skip(conn))]
@@ -58,7 +58,11 @@ async fn post_link(conn: Connection<Links>, link: GoLink) -> Result<(), &'static
 
 #[tracing::instrument(name = "DELETE /<id>", skip(cache, conn))]
 #[delete("/<id>")]
-async fn delete_link(id: Id, cache: &State<Cache>, conn: Connection<Links>) -> Result<(), &'static str> {
+async fn delete_link(
+    id: Id,
+    cache: &State<Cache>,
+    conn: Connection<Links>,
+) -> Result<(), &'static str> {
     cache.delete_link(&id)?;
     db::delete_link(&id, conn).await?;
     Ok(())

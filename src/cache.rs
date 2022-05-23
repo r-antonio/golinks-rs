@@ -30,7 +30,7 @@ impl Cache {
     pub fn set_values(&self, links: Vec<GoLink>) -> Result<(), &'static str> {
         let mut new_map: HashMap<Id, GoLink> = HashMap::new();
         for link in links {
-            new_map.insert(link.name.clone(), link);
+            new_map.insert(link.name().clone(), link);
         }
         let mut ref_map = self.data.write().unwrap();
         *ref_map = new_map;
@@ -46,7 +46,7 @@ impl Cache {
     pub fn put_link(&self, link: GoLink) -> Result<(), &'static str> {
         match self.data.write() {
             Ok(mut lock) => {
-                lock.insert(link.name.clone(), link);
+                lock.insert(link.name().clone(), link);
                 Ok(())
             }
             Err(_) => Err("Couldn't add link to the cache"),
@@ -76,7 +76,7 @@ impl Cache {
         match results.len() {
             1 => {
                 let value = items.get(results.get(0).unwrap().index).unwrap().clone();
-                info!("Matched {} for input: {}", *value.name, **id);
+                info!("Matched {} for input: {}", **value.name(), **id);
                 Some(value)
             }
             num_matched_values => {
